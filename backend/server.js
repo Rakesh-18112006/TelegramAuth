@@ -8,35 +8,42 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-// Telegram Auth Route
-app.post("/auth", (req, res) => {
-    const { hash, ...data } = req.body;
-    const botToken = process.env.BOT_TOKEN; // Securely store your bot token in .env
+// Telegram Auth Route (Handles both GET and POST)
+app.all("/auth", (req, res) => {
+    const data = req.method === "POST" ? req.body : req.query;
+    const { hash, ...authData } = data;
+    const botToken = process.env.BOT_TOKEN;
 
     if (!botToken) {
         return res.status(500).json({ error: "Bot token is missing in server config" });
     }
 
-    // 1️⃣ Compute secret key
+    // Compute secret key
     const secretKey = crypto.createHmac("sha256", botToken).update("WebAppData").digest();
 
-    // 2️⃣ Create a verification string
-    const checkString = Object.keys(data)
+    // Create verification string
+    const checkString = Object.keys(authData)
         .sort()
-        .map((key) => `${key}=${data[key]}`)
+        .map((key) => `${key}=${authData[key]}`)
         .join("\n");
 
-    // 3️⃣ Generate HMAC signature
+    // Generate HMAC signature
     const hmac = crypto.createHmac("sha256", secretKey).update(checkString).digest("hex");
 
-    // 4️⃣ Verify authentication
+    // Verify authentication
     if (hmac !== hash) {
         return res.status(401).json({ error: "Unauthorized access - Invalid Hash" });
     }
 
-    res.json({ message: "Login Successful!", user: data });
+    res.json({ message: "Login Successful!", user: authData });
+});
+
+// Root route to check server status
+app.get("/", (req, res) => {
+    res.send("Telegram Auth Server is Running ✅");
 });
 
 // Start server

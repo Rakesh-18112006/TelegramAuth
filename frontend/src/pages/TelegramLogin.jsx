@@ -7,7 +7,7 @@ const TelegramLogin = () => {
     script.async = true;
     script.setAttribute("data-telegram-login", "rakhi3690Bot"); // Replace with your bot username
     script.setAttribute("data-size", "large");
-    script.setAttribute("data-auth-url", "https://telegram-auth-lilac.vercel.app/auth"); // Your backend URL
+    script.setAttribute("data-auth-url", "https://telegram-auth-lilac.vercel.app/auth"); // Correct backend URL
     script.setAttribute("data-request-access", "write");
     document.getElementById("telegram-login-container").appendChild(script);
   }, []);
