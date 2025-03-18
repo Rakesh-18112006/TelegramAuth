@@ -19,19 +19,18 @@ app.get("/auth", (req, res) => {
         return res.status(500).json({ error: "Bot token is missing" });
     }
 
-    // Compute the correct secret key
-    const secretKey = crypto.createHmac("sha256", Buffer.from(botToken, "utf-8")).digest();
-
     // Create a sorted verification string
     const checkString = Object.keys(authData)
         .sort()
         .map((key) => `${key}=${authData[key]}`)
         .join("\n");
 
-    // Generate the hash signature
-    const hmac = crypto.createHmac("sha256", secretKey).update(checkString).digest("hex");
+    // Generate the hash signature using botToken as the key
+    const hmac = crypto.createHmac("sha256", Buffer.from(botToken));
+    hmac.update(checkString);
+    const computedHash = hmac.digest("hex");
 
-    if (hmac !== hash) {
+    if (computedHash !== hash) {
         return res.status(401).json({ error: "Unauthorized access - Invalid Hash" });
     }
 
