@@ -1,58 +1,51 @@
-const express = require("express");
-const crypto = require("crypto");
-const cors = require("cors");
-require("dotenv").config();
+import express from "express";
+import cors from "cors";
+import crypto from "crypto";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+app.use(cors()); // Allow all origins (adjust for security in production)
 
-// ✅ Root route to confirm the server is running
-app.get("/", (req, res) => {
-    res.send("Telegram Auth Server Running ✅");
+// ✅ Content Security Policy (CSP) to allow Telegram OAuth
+app.use((req, res, next) => {
+  res.setHeader("Content-Security-Policy", "frame-ancestors 'self' https://oauth.telegram.org;");
+  next();
 });
 
-// ✅ Telegram Auth Route
+// Your Telegram bot token (keep it secret!)
+const TELEGRAM_BOT_TOKEN = process.env.BOT_TOKEN;
+
+// ✅ Verify Telegram OAuth Login
 app.get("/auth", (req, res) => {
-    const { hash, ...authData } = req.query;
-    const botToken = process.env.BOT_TOKEN;
+  const authData = req.query;
 
-    if (!botToken) {
-        return res.status(500).json({ error: "Bot token is missing" });
-    }
+  if (!authData.hash) {
+    return res.status(400).json({ error: "Missing hash parameter" });
+  }
 
-    // Create a sorted verification string
-    const checkString = Object.keys(authData)
-        .sort()
-        .map((key) => `${key}=${authData[key]}`)
-        .join("\n");
+  console.log("Received Auth Data:", authData);
 
-    // Generate the hash signature using botToken as the key
-    const hmac = crypto.createHmac("sha256", Buffer.from(botToken, "utf-8"));
-    hmac.update(checkString);
-    const computedHash = hmac.digest("hex");
+  const secretKey = crypto.createHash("sha256").update(TELEGRAM_BOT_TOKEN).digest();
+  const sortedData = Object.keys(authData)
+    .filter((key) => key !== "hash")
+    .sort()
+    .map((key) => `${key}=${authData[key]}`)
+    .join("\n");
 
-    console.log("Received Hash:", hash);
-    console.log("Computed Hash:", computedHash);
-    console.log("Auth Data:", authData);
+  const computedHash = crypto.createHmac("sha256", secretKey).update(sortedData).digest("hex");
 
-    if (computedHash !== hash) {
-        return res.status(401).json({ error: "Unauthorized access - Invalid Hash" });
-    }
+  console.log("Received Hash:", authData.hash);
+  console.log("Computed Hash:", computedHash);
 
-    res.json({ message: "Login Successful!", user: authData });
+  if (authData.hash !== computedHash) {
+    return res.status(401).json({ error: "Invalid authentication data" });
+  }
+
+  res.json({ success: true, user: authData });
 });
 
-// ✅ Handle Telegram Webhook Route (IMPORTANT)
-app.post("/", (req, res) => {
-    console.log("Received Telegram Webhook:", req.body);
-    res.sendStatus(200);
-});
-
-// Start server
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
