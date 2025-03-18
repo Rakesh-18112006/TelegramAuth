@@ -10,7 +10,8 @@ const TelegramLogin = () => {
     script.async = true;
     script.setAttribute("data-telegram-login", botUsername);
     script.setAttribute("data-size", "large");
-    script.setAttribute("data-auth-url", " https://6e0f-2409-40f0-3036-cf56-5daa-950c-942d-1138.ngrok-free.app"); // Replace with your backend endpoint
+    script.setAttribute("data-auth-url", "https://telegram-auth-lilac.vercel.app/auth");
+       // Replace with your backend endpoint
     script.setAttribute("data-request-access", "write"); // Optional: Read-only or Write access
     document.getElementById("telegram-login-container").appendChild(script);
   }, []);

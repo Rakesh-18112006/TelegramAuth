@@ -11,7 +11,7 @@ app.use(express.urlencoded({ extended: true }));
 // Telegram Auth Route
 app.get("/auth", (req, res) => {
     const { hash, ...data } = req.query;
-    const token = "7339338847:AAEOVoYFUnYUM2ieMI8sXpME-zff-_K-64Q"; // Add your bot token in .env
+    const token = "7339338847:AAEOVoYFUnYUM2ieMI8sXpME-zff-_K-64Q"; // Use .env for security
     const secretKey = crypto.createHmac("sha256", "WebAppData").update(token).digest();
 
     const checkString = Object.keys(data)
