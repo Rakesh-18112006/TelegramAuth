@@ -1,9 +1,7 @@
-import express from "express";
-import cors from "cors";
-import crypto from "crypto";
-import dotenv from "dotenv";
-
-dotenv.config();
+const express = require("express");
+const crypto = require("crypto");
+const cors = require("cors");
+require("dotenv").config();
 
 const app = express();
 app.use(express.json());
@@ -16,7 +14,7 @@ app.use((req, res, next) => {
 });
 
 // Your Telegram bot token (keep it secret!)
-const TELEGRAM_BOT_TOKEN = process.env.BOT_TOKEN;
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 // ✅ Verify Telegram OAuth Login
 app.get("/auth", (req, res) => {
