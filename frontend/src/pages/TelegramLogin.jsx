@@ -22,7 +22,7 @@ const TelegramLogin = () => {
 
   return (
     <div className="flex flex-col items-center justify-center h-screen">
-      <h2 className="text-3xl font-semibold mb-4">Login with Telegram</h2>
+      <h2 className="text-3xl font-semibold mb-4">Login To Telegram</h2>
       <div id="telegram-login-container"></div>
     </div>
   );
