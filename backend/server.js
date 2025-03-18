@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 5000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+app.use(cors({ origin: "*", methods: "GET,POST" }));
 
 // Telegram Auth Route - Handles GET requests from the Telegram widget
 app.get("/auth", (req, res) => {
