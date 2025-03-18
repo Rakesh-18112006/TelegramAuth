@@ -1,40 +1,39 @@
 const express = require("express");
 const crypto = require("crypto");
+const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const BOT_TOKEN = process.env.BOT_TOKEN; // Store your bot token in .env
 
-app.use(express.urlencoded({ extended: true }));
+app.use(cors());
+app.use(express.json());
 
-// ✅ Fix: Ensure root URL `/` responds
-app.get("/", (req, res) => {
-    res.send("Telegram Auth Backend is Running!");
-});
+// Telegram Authentication Route
+app.post("/auth", (req, res) => {
+  const { hash, ...userData } = req.body;
 
-// ✅ Fix: Correct `/auth` Route
-app.get("/auth", (req, res) => {
-    const { hash, ...data } = req.query;
-    
-    // ✅ Fix: Read Bot Token from `.env` for security
-    const token = "7339338847:AAEOVoYFUnYUM2ieMI8sXpME-zff-_K-64Q";  
-    if (!token) {
-        return res.status(500).json({ error: "Bot token not set in environment variables." });
-    }
+  if (!BOT_TOKEN) {
+    return res.status(500).json({ error: "Bot token is missing!" });
+  }
 
-    // ✅ Fix: Correct Secret Key Calculation
-    const secretKey = crypto.createHmac("sha256", "WebApp").update(token).digest();
-    const checkString = Object.keys(data).sort().map((key) => `${key}=${data[key]}`).join("\n");
+  const secretKey = crypto.createHmac("sha256", "WebAppData").update(BOT_TOKEN).digest();
 
-    const hmac = crypto.createHmac("sha256", secretKey).update(checkString).digest("hex");
+  const checkString = Object.keys(userData)
+    .sort()
+    .map((key) => `${key}=${userData[key]}`)
+    .join("\n");
 
-    if (hmac !== hash) {
-        return res.status(401).json({ error: "Unauthorized access" });
-    }
+  const hmac = crypto.createHmac("sha256", secretKey).update(checkString).digest("hex");
 
-    res.json({ message: "Login Successful!", user: data });
+  if (hmac !== hash) {
+    return res.status(401).json({ error: "Unauthorized access" });
+  }
+
+  res.json({ message: "Login Successful!", user: userData });
 });
 
 app.listen(PORT, () => {
-    console.log(`✅ Server running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });

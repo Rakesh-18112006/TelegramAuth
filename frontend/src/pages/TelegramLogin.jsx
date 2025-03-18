@@ -1,29 +1,31 @@
-import React, { useEffect } from "react";
+import React from 'react';
+import { LoginButton } from '@telegram-auth/react';
 
 const TelegramLogin = () => {
-  const botUsername = "rakhi3690Bot"; // Replace with your bot's username
+  const handleTelegramAuth = (user) => {
+    console.log("User Data:", user);
 
-  useEffect(() => {
-    // Load Telegram login script dynamically 
-    const script = document.createElement("script");
-    script.src = "https://telegram.org/js/telegram-widget.js?7";
-    script.async = true;
-    script.setAttribute("data-telegram-login", botUsername);
-    script.setAttribute("data-size", "large");
-    script.setAttribute("data-auth-url", "https://telegram-auth-lilac.vercel.app/auth");
-       // Replace with your backend endpoint
-    script.setAttribute("data-request-access", "write"); // Optional: Read-only or Write access
-    document.getElementById("telegram-login-container").appendChild(script);
-  }, []);
+    // Send user data to backend for verification
+    fetch("https://your-backend.vercel.app/auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(user),
+    })
+      .then((res) => res.json())
+      .then((data) => console.log("Auth Response:", data))
+      .catch((err) => console.error("Error:", err));
+  };
 
   return (
     <div className="flex flex-col items-center justify-center h-screen">
       <h2 className="text-3xl font-semibold mb-4">Login with Telegram</h2>
-      <div id="telegram-login-container"></div>
+      <LoginButton
+        botName="rakhi3690Bot" // Replace with your bot username (without @)
+        authCallbackUrl="https://your-backend.vercel.app/auth" // Replace with your backend URL
+        onAuthCallback={handleTelegramAuth}
+      />
     </div>
   );
 };
 
 export default TelegramLogin;
-
-
