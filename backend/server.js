@@ -5,35 +5,41 @@ require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const BOT_TOKEN = process.env.BOT_TOKEN; // Store your bot token in .env
 
-app.use(cors());
+// Middleware
 app.use(express.json());
+app.use(cors());
 
-// Telegram Authentication Route
+// Telegram Auth Route
 app.post("/auth", (req, res) => {
-  const { hash, ...userData } = req.body;
+    const { hash, ...data } = req.body;
+    const botToken = process.env.BOT_TOKEN; // Securely store your bot token in .env
 
-  if (!BOT_TOKEN) {
-    return res.status(500).json({ error: "Bot token is missing!" });
-  }
+    if (!botToken) {
+        return res.status(500).json({ error: "Bot token is missing in server config" });
+    }
 
-  const secretKey = crypto.createHmac("sha256", "WebAppData").update(BOT_TOKEN).digest();
+    // 1️⃣ Compute secret key
+    const secretKey = crypto.createHmac("sha256", botToken).update("WebAppData").digest();
 
-  const checkString = Object.keys(userData)
-    .sort()
-    .map((key) => `${key}=${userData[key]}`)
-    .join("\n");
+    // 2️⃣ Create a verification string
+    const checkString = Object.keys(data)
+        .sort()
+        .map((key) => `${key}=${data[key]}`)
+        .join("\n");
 
-  const hmac = crypto.createHmac("sha256", secretKey).update(checkString).digest("hex");
+    // 3️⃣ Generate HMAC signature
+    const hmac = crypto.createHmac("sha256", secretKey).update(checkString).digest("hex");
 
-  if (hmac !== hash) {
-    return res.status(401).json({ error: "Unauthorized access" });
-  }
+    // 4️⃣ Verify authentication
+    if (hmac !== hash) {
+        return res.status(401).json({ error: "Unauthorized access - Invalid Hash" });
+    }
 
-  res.json({ message: "Login Successful!", user: userData });
+    res.json({ message: "Login Successful!", user: data });
 });
 
+// Start server
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });
