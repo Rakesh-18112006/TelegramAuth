@@ -23,7 +23,7 @@ app.get("/auth", (req, res) => {
     }
 
     // ✅ Fix: Correct Secret Key Calculation
-    const secretKey = crypto.createHmac("sha256", "WebAppData").update(token).digest();
+    const secretKey = crypto.createHmac("sha256", "WebApp").update(token).digest();
     const checkString = Object.keys(data).sort().map((key) => `${key}=${data[key]}`).join("\n");
 
     const hmac = crypto.createHmac("sha256", secretKey).update(checkString).digest("hex");
