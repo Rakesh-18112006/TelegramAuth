@@ -5,7 +5,7 @@ const TelegramLogin = () => {
     const script = document.createElement("script");
     script.src = "https://telegram.org/js/telegram-widget.js?7";
     script.async = true;
-    script.setAttribute("data-telegram-login", "rakhi3690Bot"); // Replace with your bot username
+    script.setAttribute("data-telegram-login", "rakhi3690Bot"); // Your bot username
     script.setAttribute("data-size", "large");
     script.setAttribute("data-auth-url", "https://telegram-auth-lilac.vercel.app/auth"); // Correct backend URL
     script.setAttribute("data-request-access", "write");

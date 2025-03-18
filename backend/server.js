@@ -10,29 +10,27 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-// Telegram Auth Route (GET & POST)
-app.all("/auth", (req, res) => {
-    const data = req.method === "POST" ? req.body : req.query;
-    const { hash, ...authData } = data;
+// Telegram Auth Route (GET Request)
+app.get("/auth", (req, res) => {
+    const { hash, ...authData } = req.query;
     const botToken = process.env.BOT_TOKEN;
 
     if (!botToken) {
-        return res.status(500).json({ error: "Bot token missing in server config" });
+        return res.status(500).json({ error: "Bot token is missing" });
     }
 
-    // Compute secret key correctly
+    // Compute the correct secret key
     const secretKey = crypto.createHmac("sha256", Buffer.from(botToken, "utf-8")).digest();
 
-    // Create verification string
+    // Create a sorted verification string
     const checkString = Object.keys(authData)
         .sort()
         .map((key) => `${key}=${authData[key]}`)
         .join("\n");
 
-    // Generate HMAC signature
+    // Generate the hash signature
     const hmac = crypto.createHmac("sha256", secretKey).update(checkString).digest("hex");
 
-    // Verify authentication
     if (hmac !== hash) {
         return res.status(401).json({ error: "Unauthorized access - Invalid Hash" });
     }
@@ -40,9 +38,9 @@ app.all("/auth", (req, res) => {
     res.json({ message: "Login Successful!", user: authData });
 });
 
-// Root route for server status
+// Root route for checking server status
 app.get("/", (req, res) => {
-    res.send("Telegram Auth Server is Running ✅");
+    res.send("Telegram Auth Server Running ✅");
 });
 
 // Start server
