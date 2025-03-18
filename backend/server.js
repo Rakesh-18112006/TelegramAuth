@@ -12,11 +12,19 @@ app.use(cors({ origin: "*", methods: "GET,POST" }));
 
 // Telegram Auth Route - Handles GET requests from the Telegram widget
 app.get("/auth", (req, res) => {
-  // Telegram sends the auth data as query parameters.
-  // Extract the 'hash' parameter and the rest of the data.
+  // Log the full received query for debugging
+  console.log("Received query:", req.query);
+
+  // Extract the 'hash' parameter and the rest of the data
   const { hash, ...authData } = req.query;
-  console.log("Received authData:", authData);
-  console.log("Received hash:", hash);
+  console.log("Extracted authData:", authData);
+  console.log("Extracted hash:", hash);
+
+  // Check if hash is present
+  if (!hash) {
+    console.error("Missing hash parameter");
+    return res.status(400).json({ error: "Missing hash parameter" });
+  }
 
   const botToken = process.env.BOT_TOKEN;
   if (!botToken) {
@@ -24,34 +32,47 @@ app.get("/auth", (req, res) => {
     return res.status(500).json({ error: "Bot token is missing" });
   }
 
-  // According to Telegram’s docs, compute the secret key as:
-  // secret_key = SHA256(bot_token)
+  // Compute the secret key as SHA256(bot_token)
   const secretKey = crypto.createHash("sha256").update(botToken).digest();
   console.log("Computed secretKey (hex):", secretKey.toString("hex"));
 
-  // Build the data_check_string:
-  // Sort all keys of authData in alphabetical order and join them in "key=value" lines.
+  // Build the data_check_string: Sort keys and join in "key=value" format
   const sortedKeys = Object.keys(authData).sort();
+  console.log("Sorted keys:", sortedKeys);
   const dataCheckString = sortedKeys.map(key => `${key}=${authData[key]}`).join("\n");
   console.log("Data check string:", dataCheckString);
 
-  // Compute the HMAC SHA256 of the data_check_string using the secret key.
-  const computedHash = crypto.createHmac("sha256", secretKey)
+  // Compute the HMAC SHA256 of the data_check_string using the secret key
+  const computedHash = crypto
+    .createHmac("sha256", secretKey)
     .update(dataCheckString)
     .digest("hex");
   console.log("Computed hash:", computedHash);
+  console.log("Provided hash:", hash);
 
-  // Compare the computed hash with the hash provided by Telegram.
+  // Validate auth_date (ensure data is not older than 24 hours)
+  if (!authData.auth_date) {
+    console.error("Missing auth_date parameter");
+    return res.status(400).json({ error: "Missing auth_date parameter" });
+  }
+  const authTimestamp = parseInt(authData.auth_date, 10);
+  const currentTimestamp = Math.floor(Date.now() / 1000); // Current time in seconds
+  if (currentTimestamp - authTimestamp > 86400) {
+    console.error("Authentication data is outdated");
+    return res.status(401).json({ error: "Authentication data is outdated" });
+  }
+
+  // Compare the computed hash with the hash provided by Telegram
   if (computedHash !== hash) {
     console.error("Hash mismatch! Expected:", hash, "but computed:", computedHash);
     return res.status(401).json({ error: "Unauthorized access - Invalid Hash" });
   }
 
-  // If everything matches, authentication is successful.
+  // If everything matches, authentication is successful
   res.json({ message: "Login Successful!", user: authData });
 });
 
-// Simple root route to check server status.
+// Simple root route to check server status
 app.get("/", (req, res) => {
   res.send("Telegram Auth Server Running ✅");
 });
